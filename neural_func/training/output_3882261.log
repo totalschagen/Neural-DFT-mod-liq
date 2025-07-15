@@ -1,0 +1,13 @@
+Loading cuda/12.6.2-gcc-13.3.0-n5c5eu7
+  Loading requirement: glibc/2.28-gcc-13.3.0-w6yo6y6
+    gcc-runtime/13.3.0-gcc-13.3.0-gv76phw libiconv/1.17-gcc-13.3.0-efbrjy5
+    xz/5.4.6-gcc-13.3.0-opqnzzi zlib-ng/2.2.1-gcc-13.3.0-hutnoii
+    libxml2/2.13.4-gcc-13.3.0-mb7jnm6
+  Loading Anaconda3/2023.10/miniconda-base-2023.10
+  To use conda commands in your current shell session
+  and activate the base environment, first do:
+    eval "$($UIBK_CONDA_DIR/bin/conda shell.bash hook)"
+  To list available environments:
+    conda env list
+  To activate any of conda's environments, then do:
+    conda activate <environment>
