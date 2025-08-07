@@ -54,9 +54,18 @@ int main() {
     //std::random_device rd;
     std::mt19937 rng(m); // use the last digits of the seed and the loop index to create a unique seed for each thread
     // specify fixed simulation parameters
+
+    // fix resolution
+    double res = 50;
     state->T = 1.0;
     state->radius = 0.5;
-    state->Lx = 15;
+
+    // fix system size
+    int L_min = 8;
+    int L_max = 18;
+
+    std::uniform_int_distribution<int> Ldist(L_min,L_max);
+    state->Lx = double (Ldist(rng)); 
     state->Ly = state->Lx;
 
     // fix bounds for random parameters
@@ -67,7 +76,7 @@ int main() {
     double mu_max = 6.0;
 
     // state->Nbins = LLL_max*20; // bins for 1 period
-    state->Nbins = 750; 
+    state->Nbins = state->Lx * res; // bins with fixed resolution
     // initialize random distributions for potential variations
     std::uniform_real_distribution<double> mudist(mu_min, mu_max);
     std::uniform_real_distribution<double> dist(0.0, 1.0);
