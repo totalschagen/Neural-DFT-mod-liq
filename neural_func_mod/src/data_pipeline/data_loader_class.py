@@ -1,5 +1,7 @@
 import torch
 import random
+import gc
+import os
 import torch.nn.functional as F
 from torch.utils.data import Dataset,DataLoader, TensorDataset,Sampler
 from collections import OrderedDict
@@ -47,10 +49,11 @@ class SlidingWindowDataset(Dataset):
         return window,value
 
 class prepared_windows_dataset(Dataset):
-    def __init__(self, file_list, cache_size=2):
+    def __init__(self, file_list,len_list, cache_size=2):
         """
         Args:
-            file_list: list of dictionaries with 'windows' and 'labels' tensors
+            file_list: list of file_paths
+            len_list: dictionary of lengths for each file, used to create indices
             cache_size: int, number of files to cache in memory
         """
         self.file_list = file_list
@@ -59,11 +62,12 @@ class prepared_windows_dataset(Dataset):
         self.cache = OrderedDict()
         self.cache_size = cache_size
         self.indices = []
-        
+        self.len_list = len_list
+
 
         for file_name in file_list:
-            file = torch.load(file_name)
-            file_length = file['windows'].shape[0]
+            red_file_name=os.path.split(file_name)[-1]  # Get the file name without path
+            file_length = len_list[red_file_name]
             self.file_len.append(file_length)
             self.indices.extend([(file_name, i) for i in range(file_length)])
 
@@ -88,6 +92,52 @@ class prepared_windows_dataset(Dataset):
         window = data['windows'][window_idx]
         label = data['labels'][window_idx]
         return window, label
+
+class prepared_windows_inference_dataset(Dataset):
+    def __init__(self, file_list,len_list, cache_size=2):
+        """
+        Args:
+            file_list: list of file_paths
+            len_list: dictionary of lengths for each file, used to create indices
+            cache_size: int, number of files to cache in memory
+        """
+        self.file_list = file_list
+        self.file_len =  []
+        self.cache_size = cache_size
+        self.cache = OrderedDict()
+        self.cache_size = cache_size
+        self.indices = []
+        self.len_list = len_list
+
+
+        for file_name in file_list:
+            red_file_name=os.path.split(file_name)[-1]  # Get the file name without path
+            file_length = len_list[red_file_name]
+            self.file_len.append(file_length)
+            self.indices.extend([(file_name, i) for i in range(file_length)])
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx):
+        file_name, window_idx = self.indices[idx]
+
+        # Check if the file is in cache
+        if file_name not in self.cache:
+            # Load the file and cache it
+            data = torch.load(file_name)
+            self.cache[file_name] = data
+
+            # If cache exceeds size, remove the oldest entry
+            if len(self.cache) > self.cache_size:
+                self.cache.popitem(last=False)
+
+        # Get the cached data
+        data = self.cache[file_name]
+        window = data['windows'][window_idx]
+        return window
+
+
 
 class prepared_windows_shuffler(Sampler[int]):
     def __init__(self,dataset:prepared_windows_dataset):

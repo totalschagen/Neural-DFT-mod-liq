@@ -37,10 +37,10 @@ def load_df_old(name,tag):
     except:
         print("No packing")
     return df, extra
-def get_names(density_profiles_dir,tag):
+def get_names(density_profiles_dir,tag,ending=".pt"):
 # Path to the Density_profiles directory
     density_profiles_dir = os.path.join(density_profiles_dir, tag)
-    names= [os.path.join(density_profiles_dir,f) for f in os.listdir(density_profiles_dir) if os.path.isfile(os.path.join(density_profiles_dir, f))]
+    names= [os.path.join(density_profiles_dir,f) for f in os.listdir(density_profiles_dir) if os.path.isfile(os.path.join(density_profiles_dir, f)) and f.endswith(ending)]
     return names
 def load_df(name):
     # Path to the Density_profiles directory
@@ -124,7 +124,7 @@ def cut_density_windows_torch_padded(df, window_dim):
     rhomatrix = df.pivot(index='y', columns='x', values='rho').values
     mulocmatrix = df.pivot(index='y', columns='x', values='muloc').values
     pad_size = window_dim//2
-    rhotensor = torch.tensor(rhomatrix, dtype=torch.float32)
+    rhotensor = torch.tensor(rhomatrix, dtype=torch.float32)  
     rhotensor = rhotensor.unsqueeze(0).unsqueeze(0)
     rhotensor = rhotensor.to(device="cuda")
 
@@ -367,3 +367,17 @@ def plot_density_profiles_2d_3d_debug(tag,num=-1,start=0):
         fig.colorbar(pcm, ax=axs[i,0], label=r"$\rho^{(1)}(\mathbf{x})$") 
     plt.tight_layout()
     plt.savefig(savename, dpi=300)
+
+def parse_len_file_to_dict(file_path):
+    """
+    Reads a .txt file where each line is in the format:
+    filename ;number
+    and returns a dictionary mapping filenames to numbers (as integers).
+    """
+    result = {}
+    with open(file_path, 'r') as f:
+        for line in f:
+            if ';' in line:
+                key, value = line.strip().split(';')
+                result[key.strip()] = int(value.strip())
+    return result

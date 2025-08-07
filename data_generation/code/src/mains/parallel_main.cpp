@@ -63,10 +63,11 @@ int main() {
     double mu_min = -2.0;
     float rr = 2*state->radius;
     int LLL_min = int(state->Lx / 2*rr);
-    int LLL_max = int(state->Lx / 0.2*rr);  
+    int LLL_max = int(state->Lx / 0.4*rr);  
     double mu_max = 6.0;
 
-    state->Nbins = LLL_max*20; // bins for 1 period
+    // state->Nbins = LLL_max*20; // bins for 1 period
+    state->Nbins = 750; 
     // initialize random distributions for potential variations
     std::uniform_real_distribution<double> mudist(mu_min, mu_max);
     std::uniform_real_distribution<double> dist(0.0, 1.0);

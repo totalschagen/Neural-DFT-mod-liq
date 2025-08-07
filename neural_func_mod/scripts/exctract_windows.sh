@@ -1,3 +1,3 @@
 #!/bin/bash
-PYTHONPATH=src python src/data_pipeline/create_training_data_reduced.py  parallel2025-06-20_00-01-10 0.1 6 3 2
+PYTHONPATH=src python src/data_pipeline/create_training_data_reduced.py  parallel2025-07-25_04-00-08 5 6 3 2
 

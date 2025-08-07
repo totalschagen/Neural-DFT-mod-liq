@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 import sys
+# import gc
 import utils.neural_helper as helper
 from utils.set_paths import set_paths
 import matplotlib.pyplot as plt
@@ -12,15 +13,16 @@ import torch.nn.functional as F
 from memory_profiler import profile
 
 #@profile
-def load_training_data(names,window_L,sim_L=15,n_profiles=-1):
+def load_training_data(names,window_L,sim_L=15,n_profiles=-1,mod=True):
 
     rho_list = []
     c1_list = []
     for i in names:
         df,extra = helper.load_df(i)
         # Get the number of rows and columns in the DataFrame
-        L_period_perturb = 15/extra["period_perturb"]
-        df["muloc"] = df["muloc"]+ extra["amp_perturb"]* np.sin(2 * np.pi * df["y"] / L_period_perturb)
+        if not mod:
+            L_period_perturb = 15/extra["period_perturb"]
+            df["muloc"] = df["muloc"]+ extra["amp_perturb"]* np.sin(2 * np.pi * df["y"] / L_period_perturb)
         df.loc[df["rho"] <= 0, "rho"] = 1e-10
         df["muloc"]=np.log(df["rho"])+df["muloc"]
         if np.sum(df["rho"])< 0.1:
@@ -36,6 +38,8 @@ def load_training_data(names,window_L,sim_L=15,n_profiles=-1):
     dim = shape[0]
     dx = dim / sim_L
     window_dim = int(dx*window_L)
+    if window_dim % 2 == 0:
+        window_dim += 1
     return rho_list, c1_list, window_dim, dx
 
 
@@ -126,8 +130,39 @@ def torch_load(path):
     print(data['windows'].shape, data['labels'].shape)
     return data
 
+def _extract_windows_inference(stride,window_size, x,c2=False):
+    """
+    x, y: single matrix pair on GPU, shape (H, W)
+    Returns:
+        windows: [L, 1, win, win]
+        labels: [L]
+    """
+    # x = x.cuda(non_blocking=True)  # Ensure x is on GPU
+    # y = y.cuda(non_blocking=True)  # Ensure y is on GPU
+    x = x.unsqueeze(0).unsqueeze(0)  # [1, 1, H, W]
+    win = window_size
+    stri = stride
+
+    # Unfold to get all windows as columns
+    pad_size = win //2
+    # Apply padding to ensure windows can be extracted correctly
+    if c2:
+        x = F.pad(x, (pad_size,pad_size,0,0), mode='circular') # Reflect padding
+    #else:
+        #sbax = F.pad(x, (pad_size,pad_size,pad_size,pad_size), mode='circular')  # Reflect padding
+    #print(x.shape)
+    unfolded = F.unfold(x, kernel_size=win, stride=stri)  # [1, win*win, L]
+
+    num_windows = unfolded.shape[-1]
+    # Reshape to [L, 1, win, win]
+    windows = unfolded.transpose(1, 2).reshape(num_windows, 1, win, win)
+    # windows_y = unfoldedy.transpose(1, 2).reshape(num_windows, 1, win, win)
+
+    
+    return windows,num_windows
+
 # @profile
-def _extract_windows_unfold(stride,window_size, x, y,pooling=False):
+def _extract_windows_unfold(stride,window_size, x, y,pooling=False,padding=True):
     """
     x, y: single matrix pair on GPU, shape (H, W)
     Returns:
@@ -144,30 +179,60 @@ def _extract_windows_unfold(stride,window_size, x, y,pooling=False):
         x = F.avg_pool2d(x, kernel_size=2, stride=2)  # [1, 1, H', W']
         y = F.avg_pool2d(y, kernel_size=2, stride=2)  # [1, 1, H', W']
         win = win // 2  # Adjust window size for pooling
+        # y_t=y
         y = y.squeeze(0).squeeze(0)  # Remove batch and channel dimensions for labels
     # Unfold to get all windows as columns
-    unfolded = F.unfold(x, kernel_size=win, stride=stri)  # [1, win*win, L]
-    num_windows = unfolded.shape[-1]
+    pad_size = win //2
+    if padding:
+        # Apply padding to ensure windows can be extracted correctly
+        x = F.pad(x, (pad_size,pad_size,pad_size,pad_size,), mode='circular')  # Reflect padding
+        # y_t = F.pad(y_t, (pad_size,pad_size,pad_size,pad_size,), mode='circular')  # Reflect padding
+        unfolded = F.unfold(x, kernel_size=win, stride=stri)  # [1, win*win, L]
+        # unfoldedy = F.unfold(y_t, kernel_size=win, stride=stri)  # [1, win*win, L]
 
-    # Reshape to [L, 1, win, win]
-    windows = unfolded.transpose(1, 2).reshape(num_windows, 1, win, win)
+        num_windows = unfolded.shape[-1]
+        # Reshape to [L, 1, win, win]
+        windows = unfolded.transpose(1, 2).reshape(num_windows, 1, win, win)
+        # windows_y = unfoldedy.transpose(1, 2).reshape(num_windows, 1, win, win)
 
-    # Compute label positions (center of each window)
-    H = x.shape[-2]
-    W = x.shape[-1]
-    rows = torch.arange(0, H - win + 1, stride, device=x.device)
-    cols = torch.arange(0, W - win + 1, stride, device=x.device)
-    ii, jj = torch.meshgrid(rows, cols, indexing='ij')
 
-    center_i = ii + win // 2
-    center_j = jj + win // 2
-    labels = y[center_i, center_j].reshape(-1)  # [L]
-    
-    return windows, labels
+        H = x.shape[-2]
+        W = x.shape[-1]
+        rows = torch.arange(0, H - win + 1, stride, device=x.device)
+        cols = torch.arange(0, W - win + 1, stride, device=x.device)
+        ii, jj = torch.meshgrid(rows, cols, indexing='ij')
+
+        center_i = ii 
+        center_j = jj 
+        labels = y[center_i, center_j].reshape(-1)
+        ## check if labels are correct
+        # for i in range(num_windows):
+            # assert labels2[i]==windows_y[i,0,2,2] , "proper missmatch"
+            # if labels[i] != labels2[i]: 
+            #     print(f"Label mismatch at index {i}: {labels[i]} != {labels2[i]}")
+            #     print(windows_y[i])
+            #     print(labels[i],labels2[i],windows_y[i,0,2,2])
+                # exit()
+        return windows, labels
+    else:
+        unfolded = F.unfold(x, kernel_size=win, stride=stri)  # [1, win*win, L]
+        num_windows = unfolded.shape[-1]
+        windows = unfolded.transpose(1, 2).reshape(num_windows, 1, win, win)
+        # Compute label positions (center of each window)
+        H = x.shape[-2]
+        W = x.shape[-1]
+        rows = torch.arange(0, H - win + 1, stride, device=x.device)
+        cols = torch.arange(0, W - win + 1, stride, device=x.device)
+        ii, jj = torch.meshgrid(rows, cols, indexing='ij')
+
+        center_i = ii + pad_size
+        center_j = jj + pad_size
+        labels = y[center_i, center_j].reshape(-1)  # [L]
+        return windows, labels
 
 
 # @profile
-def extract_windows_from_chunk( stride,window_size,density_chunk, label_chunk,pooling=False,cat_CPU=False):
+def extract_windows_from_chunk( stride,window_size,density_chunk, label_chunk,pooling=False,cat_CPU=False,padding=True):
     all_windows, all_labels = [], []
     count = 0
     for x_cpu, y_cpu in zip(density_chunk, label_chunk):
@@ -175,7 +240,7 @@ def extract_windows_from_chunk( stride,window_size,density_chunk, label_chunk,po
         x = x_cpu.cuda(non_blocking=True)
         y = y_cpu.cuda(non_blocking=True)
 
-        windows, labels =_extract_windows_unfold(stride,window_size,x, y,pooling=pooling)
+        windows, labels =_extract_windows_unfold(stride,window_size,x, y,pooling=pooling,padding=padding)
         print("extracted windows")
         if cat_CPU:
             # Move back to CPU if needed
@@ -185,7 +250,7 @@ def extract_windows_from_chunk( stride,window_size,density_chunk, label_chunk,po
         all_windows.append(windows)
         all_labels.append(labels)
         count += 1
-    print("concatenate on GPU")
+
     windows = torch.cat(all_windows, dim=0)
     labels = torch.cat(all_labels, dim=0)
 
