@@ -19,7 +19,7 @@ data_dir, density_profiles_dir, neural_func_dir = set_paths()
 model_tag = str(sys.argv[1]) if len(sys.argv) > 1 else "20250730_033617chunk_training"
 model_dim = int(sys.argv[2]) if len(sys.argv) > 2 else 401
 
-data_tag = "parallel2025-07-25_04-00-08"
+data_tag = "parallel2025-08-06_16-42-14"
 
 num_slices=1
 timestamp =datetime.now().strftime("%Y%m%d_%H%M%S")

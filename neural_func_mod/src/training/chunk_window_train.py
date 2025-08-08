@@ -36,6 +36,11 @@ num_epochs = int(sys.argv[3]) if len(sys.argv) > 3 else 200
 num_workers = int(sys.argv[4]) if len(sys.argv) > 4 else 4
 cache_size = int(sys.argv[5]) if len(sys.argv) > 5 else 2
 pre_train = bool(int(sys.argv[6])) if len(sys.argv) > 6 else False
+batch_size = int(sys.argv[7]) if len(sys.argv) > 7 else 1024
+learning_rate = float(sys.argv[8]) if len(sys.argv) > 8 else 0.0035
+model_tag = str(sys.argv[9]) if len(sys.argv) > 9 else 2
+kmax = float(sys.argv[10]) if len(sys.argv) > 10 else 12
+
 data_dir, density_profiles_dir, neural_func_dir = set_paths()
 
 model_tag = "20250725_005640chunk_training"
@@ -72,7 +77,9 @@ train_data, val_data = random_split(names, lengths, generator=generator)
 check_data = torch.load(names[0])
 window_dim = check_data['windows'][0].shape[1]
 print(f"Window dimension: {window_dim}")
-model = net.conv_neural_func9(window_dim)
+model_function_list=[net.conv_neural_func3, net.conv_neural_func5, net.conv_neural_func7]
+model = model_function_list[model_tag](window_size=window_dim, k=kmax)
+
 if pre_train:
     print("Loading pre-trained model...")
     model.load_state_dict(torch.load(model_path))

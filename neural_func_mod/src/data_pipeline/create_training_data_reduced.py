@@ -93,7 +93,7 @@ def gen_data(sim_L,window_L,names, chunk_size,CPU_cat,stride,output_dir,num_slic
 
 sim_L = 15
 cpu_cat = [True]
-chunk_size=range(5,13)
+chunk_size=range(2,13)
 # chunk_size=[11,12]
 
 data_dir, density_profiles_dir, neural_func_dir = set_paths()
@@ -107,7 +107,7 @@ names= helper.get_names(density_profiles_dir,tag,ending=".dat")
 # RAbatfile2 = os.path.join(output_dir, "RAM_usage.txt")
 old_sub_output_dir = None
 for cpu in [False,True]:
-    for s in [6,5,4]:
+    for s in [3,2]:
         for c_s in chunk_size:
             sub_output_dir = os.path.join(output_dir,f"stride_{s}_catCPU_{cpu}_chunk_{c_s}")
             os.makedirs(sub_output_dir, exist_ok=True)

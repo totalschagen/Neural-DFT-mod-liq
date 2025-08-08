@@ -46,7 +46,7 @@ int main() {
   // tunable parameters
   #ifndef BULK
   #pragma omp parallel for
-  for(int m=1;m<128;m++){
+  for(int m=1;m<250;m++){
     SimulationState* state = new SimulationState();
     state->Neq = 100000000;
     state->Nsim = 500000001;
@@ -65,7 +65,8 @@ int main() {
     int L_max = 18;
 
     std::uniform_int_distribution<int> Ldist(L_min,L_max);
-    state->Lx = double (Ldist(rng)); 
+    // state->Lx = double (Ldist(rng)); 
+    state->Lx=15.0; // fixed system size
     state->Ly = state->Lx;
 
     // fix bounds for random parameters

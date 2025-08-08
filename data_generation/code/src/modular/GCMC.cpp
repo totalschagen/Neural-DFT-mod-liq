@@ -1024,7 +1024,7 @@ void print_positions(SimulationState* state,const fs::path& dir,int step) {
 void print_rhox_avg_c1(SimulationState* state,const fs::path& dir,int file_count) {
   std::string density_file_name = "rho_MC_2D_" + std::to_string(file_count) + ".dat";
   std::ofstream density_file(dir / density_file_name);
-  density_file << "x y rho muloc" << state->nperiods << " " << state->mu <<" " << state->packing_fraction << " "<<state->Amp << " " << state->nperiods_perturb << " " << state->Amp_perturb <<" " << state->Lx << "\n";
+  density_file << "x y rho muloc " << state->nperiods << " " << state->mu <<" " << state->packing_fraction << " "<<state->Amp << " " << state->nperiods_perturb << " " << state->Amp_perturb <<" " << state->Lx << "\n";
 
   double binarea = (state->Lx / state->Nbins)*(state->Ly / state->Nbins);
   for (int i = 0; i < state->Nbins; i++) {
