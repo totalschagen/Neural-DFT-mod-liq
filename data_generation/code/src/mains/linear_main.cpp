@@ -84,7 +84,7 @@ int main() {
     state->nperiods = int((state->Lx + 0.000000001) / state->Lperiod);
     state->nperiods_perturb = int((state->Lx + 0.000000001) / state->Lperiod_perturb);
 
-    run_simulation(state,fout2,fout1,density_profiles_dir,m,rng, positions_dir); 
+    run_simulation(state,fout2,fout1,density_profiles_dir,m,rng, positions_dir,output_dir); 
   }
   #endif
   #ifdef BULK

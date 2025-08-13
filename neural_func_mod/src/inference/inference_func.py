@@ -11,7 +11,7 @@ from data_pipeline.create_training_data_func import _extract_windows_inference
 def neural_c1(model, rho,num_slices,sim_L, dx):
     ## rho matrix is either list of single matrix (as torch tensor) or a list of matrices
     _,_,window_dims,_ =next(model.children()).weight.shape
-    slice_length= int(sim_L*dx / num_slices)
+    slice_length= int(rho.shape[0] / num_slices)
     #N = rho_matrix.shape[0]
     #output_dim = N - window_dims + 1
     # output=torch.empty((output_dim, output_dim),device="cpu")
@@ -38,7 +38,7 @@ def neural_c1(model, rho,num_slices,sim_L, dx):
                 inputs = windows[k,:,:,:]
                 output = model(inputs).view(-1).cpu()
                 slice_output.append(output)
-            slice_output = torch.cat(slice_output, dim=0).reshape(slice_length, slice_length)
+            slice_output = torch.cat(slice_output, dim=0).reshape(slice_length-window_dims+1, slice_length-window_dims+1)
             # rho_slice = rho_slice.cpu()
             # diff=(slice_output-rho_slice)
             # assert torch.sum(diff) == 0, f"Output does not match input slice at position ({i},{j}). Difference: {torch.sum(diff)}"

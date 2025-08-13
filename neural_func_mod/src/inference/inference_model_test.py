@@ -32,7 +32,8 @@ model = net.conv_neural_func9(model_dim)
 model.load_state_dict(torch.load(model_path, map_location='cpu'))
 device= torch.device("cuda")
 model = model.to(device) 
-
+_,_, window_dim,_ = next(model.children()).weight.shape
+print(f"Model loaded from {model_path} with window dimension {window_dim}")
 for i in range(3):
     rho,_, window_dim, dx = load_training_data([names[i]],window_L=4.0,sim_L=15)
     rho = rho[0]  # Get the  profile

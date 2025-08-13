@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 class conv_neural_func3(nn.Module):
     def __init__(self,window_size,k):
-        super(conv_neural_func7, self).__init__()
+        super(conv_neural_func3, self).__init__()
         self.conv1 = nn.Conv2d(1,k,kernel_size = window_size)
         self.conv2 = nn.Conv2d(k,k,kernel_size = 1)
         self.conv3 = nn.Conv2d(k,1,kernel_size = 1)
@@ -17,7 +17,7 @@ class conv_neural_func3(nn.Module):
 
 class conv_neural_func5(nn.Module):
     def __init__(self,window_size,k):
-        super(conv_neural_func7, self).__init__()
+        super(conv_neural_func5, self).__init__()
         self.conv1 = nn.Conv2d(1,k,kernel_size = window_size)
         self.conv2 = nn.Conv2d(k,k,kernel_size = 1)
         self.conv3 = nn.Conv2d(k,k,kernel_size = 1)
@@ -76,22 +76,6 @@ class conv_neural_func9(nn.Module):
         return x
 
 
-class conv_neural_func5(nn.Module):
-    def __init__(self):
-        super(conv_neural_func5, self).__init__()
-        self.conv1 = nn.Conv2d(1,16,kernel_size = 85)
-        self.conv2 = nn.Conv2d(16,16,kernel_size = 1)
-        self.conv3 = nn.Conv2d(16,16,kernel_size = 1)
-        self.conv4 = nn.Conv2d(16,16,kernel_size = 1)
-        self.conv5 = nn.Conv2d(16,1,kernel_size = 1)
-
-    def forward(self,x):
-        x = self.conv1(x)
-        x = F.softplus(self.conv2(x))
-        x = F.softplus(self.conv3(x))
-        x = F.softplus(self.conv4(x))
-        x = self.conv5(x)
-        return x
 
 class conv_neural_func_new(nn.Module):
     def __init__(self):

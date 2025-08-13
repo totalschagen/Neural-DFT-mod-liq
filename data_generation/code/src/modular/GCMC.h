@@ -65,7 +65,7 @@ struct SimulationState {
 };
 
 
-void run_simulation(SimulationState* state,std::ofstream& Nout,std::ofstream& Eta_out,const std::filesystem::path& dir,int file_count,std::mt19937& rng,const std::filesystem::path& pos_dir); 
+void run_simulation(SimulationState* state,std::ofstream& Nout,std::ofstream& Eta_out,const std::filesystem::path& dir,int file_count,std::mt19937& rng,const std::filesystem::path& pos_dir,const std::filesystem::path& output_dir); 
 void pbc(SimulationState* state,double &x, double &y, int &ix, int &iy);
 void pbc_distance(SimulationState* state,double &x, double &y);
 int lattice_packing(SimulationState* state);
@@ -91,7 +91,7 @@ bool check_cell_lists(SimulationState* state);
 
 void print_gr(SimulationState* state,int step);
 void print_positions(SimulationState* state,const std::filesystem::path& dir,int step);
-void print_rhox_avg_c1(SimulationState* state,const std::filesystem::path& dir,int file_count) ;
+void print_rhox_avg_c1(SimulationState* state,const std::filesystem::path& dir,int file_count);
 
 void print_N(SimulationState* state,const char *cstr,int step);
 void print_eta(SimulationState* state,const char *cstr, double packing_fraction, double mu, double density);

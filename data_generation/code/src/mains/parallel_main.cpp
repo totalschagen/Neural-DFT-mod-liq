@@ -46,7 +46,7 @@ int main() {
   // tunable parameters
   #ifndef BULK
   #pragma omp parallel for
-  for(int m=1;m<250;m++){
+  for(int m=1;m<150;m++){
     SimulationState* state = new SimulationState();
     state->Neq = 100000000;
     state->Nsim = 500000001;
@@ -74,7 +74,7 @@ int main() {
     float rr = 2*state->radius;
     int LLL_min = int(state->Lx / 2*rr);
     int LLL_max = int(state->Lx / 0.4*rr);  
-    double mu_max = 6.0;
+    double mu_max = 5.0;
 
     // state->Nbins = LLL_max*20; // bins for 1 period
     state->Nbins = state->Lx * res; // bins with fixed resolution
@@ -85,8 +85,8 @@ int main() {
     state->mu = mudist(rng);
     //state->mu = 7.9;
     state->density = 3*0.1;
-    state->Amp_in = 3*dist(rng);
-    state->Amp_perturb = 3*dist(rng)*0.01;
+    state->Amp_in = dist(rng);
+    state->Amp_perturb = dist(rng)*0.01;
     
     state->nperiods = rand(rng); 
     state->nperiods_perturb = rand(rng); 
@@ -97,7 +97,7 @@ int main() {
     state->nperiods = int((state->Lx + 0.000000001) / state->Lperiod);
     state->nperiods_perturb = int((state->Lx + 0.000000001) / state->Lperiod_perturb);
 
-    run_simulation(state,fout2,fout1,density_profiles_dir,m,rng, positions_dir); 
+    run_simulation(state,fout2,fout1,density_profiles_dir,m,rng, positions_dir,output_dir); 
 
   }
   #endif

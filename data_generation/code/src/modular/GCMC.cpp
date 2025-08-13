@@ -31,7 +31,7 @@ int rnd;
 
 
 
-void run_simulation(SimulationState* state,std::ofstream& Nout,std::ofstream& Eta_out,const fs::path& dir,int file_count,std::mt19937& rng,const fs::path& pos_dir) {
+void run_simulation(SimulationState* state,std::ofstream& Nout,std::ofstream& Eta_out,const fs::path& dir,int file_count,std::mt19937& rng,const fs::path& pos_dir,const fs::path& output_dir) {
   clock_t begin = clock();
   time_t rawtime;
   struct tm *timeinfo;
@@ -95,7 +95,9 @@ void run_simulation(SimulationState* state,std::ofstream& Nout,std::ofstream& Et
   //print_positions(state,0);
 
   // prepare output files
-
+  std::string output_file_name = "rho_MC_2D_" + std::to_string(file_count) + ".dat";
+  std::ofstream output_file(output_dir / output_file_name);
+  output_file << "x y rho muloc " << state->nperiods << " " << state->mu <<" " << state->packing_fraction << " "<<state->Amp << " " << state->nperiods_perturb << " " << state->Amp_perturb <<" " << state->Lx << "\n"; 
   ////////////////////////////////////////////////////////////////////
   /////////////// INITIALIZATION FINISHED ! //////////////////////////
   ////////////////////////////////////////////////////////////////////
@@ -210,10 +212,9 @@ void run_simulation(SimulationState* state,std::ofstream& Nout,std::ofstream& Et
 
     if (i % state->Nprint == 0) {
       //print_positions(i);
-      #pragma omp critical
-      {
-        Nout << i << " " << state->N << " " << state->density << " " << state->mu << "\n"; 
-      }
+      
+      output_file << i << " " << state->N << " " << state->density << " " << state->mu << "\n"; 
+      
       CL_check=check_cell_lists(state);
       if (CL_check == false) {
         printf("Cell list check failed! \n");
@@ -243,6 +244,8 @@ void run_simulation(SimulationState* state,std::ofstream& Nout,std::ofstream& Et
   #endif
   printf("\n");
   print_positions(state,pos_dir,file_count);
+
+  output_file << state-> packing_fraction << " " << state->mu << " " << state->density <<"\n";
   printf("Packing fraction = %f \n", state->packing_fraction);
   printf("Period = %f \n", state->Lperiod);
   printf("Amplitude = %f \n", state->Amp);

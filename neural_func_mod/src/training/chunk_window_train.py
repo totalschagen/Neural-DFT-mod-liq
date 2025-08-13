@@ -38,16 +38,15 @@ cache_size = int(sys.argv[5]) if len(sys.argv) > 5 else 2
 pre_train = bool(int(sys.argv[6])) if len(sys.argv) > 6 else False
 batch_size = int(sys.argv[7]) if len(sys.argv) > 7 else 1024
 learning_rate = float(sys.argv[8]) if len(sys.argv) > 8 else 0.0035
-model_tag = str(sys.argv[9]) if len(sys.argv) > 9 else 2
-kmax = float(sys.argv[10]) if len(sys.argv) > 10 else 12
+model_ind = int(sys.argv[9]) if len(sys.argv) > 9 else 2
+kmax = int(sys.argv[10]) if len(sys.argv) > 10 else 12
 
 data_dir, density_profiles_dir, neural_func_dir = set_paths()
 
 model_tag = "20250725_005640chunk_training"
 
-print("num_workers:", num_workers)
-print("cache_size:", cache_size)
-print("pre_train:", pre_train)
+
+print(f"Starting training with {num_epochs} epochs, {num_workers} workers, {cache_size} cache size, pre_train={pre_train}, batch_size={batch_size}, learning_rate={learning_rate}, model_ind={model_ind}, kmax={kmax}")
 ## Prepare data paths
 timestamp =datetime.now().strftime("%Y%m%d_%H%M%S")
 output_dir = os.path.join(neural_func_dir,timestamp+"chunk_training")
@@ -78,14 +77,20 @@ check_data = torch.load(names[0])
 window_dim = check_data['windows'][0].shape[1]
 print(f"Window dimension: {window_dim}")
 model_function_list=[net.conv_neural_func3, net.conv_neural_func5, net.conv_neural_func7]
-model = model_function_list[model_tag](window_size=window_dim, k=kmax)
+model = model_function_list[model_ind](window_size=window_dim, k=kmax)
+# if model_ind == 0:
+#     model = net.conv_neural_func3(window_size=window_dim, k=kmax)
+# elif model_ind == 1:
+#     model = net.conv_neural_func5(window_size=window_dim, k=kmax)
+# elif model_ind == 2:
+#     model = net.conv_neural_func7(window_size=window_dim, k=kmax)
 
 if pre_train:
     print("Loading pre-trained model...")
     model.load_state_dict(torch.load(model_path))
     print("Pre-trained model loaded.")
 criterion = torch.nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0035)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.8)
 device = torch.device("cuda")
 print("Using device:",device)
@@ -162,3 +167,5 @@ plt.savefig(os.path.join(fig_output_path,"train_val_loss_conv"+".png"))
 
 torch.save(model.state_dict(),output_dir+"/model.pth")
 print(timestamp+"chunk_training")
+print(f"Model saved to {output_dir}/model.pth")
+print(f"Running training with {num_epochs} epochs, {num_workers} workers, {cache_size} cache size, pre_train={pre_train}, batch_size={batch_size}, learning_rate={learning_rate}, model_ind={model_ind}, kmax={kmax}")
