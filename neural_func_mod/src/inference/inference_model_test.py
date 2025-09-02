@@ -35,22 +35,28 @@ model = model.to(device)
 _,_, window_dim,_ = next(model.children()).weight.shape
 print(f"Model loaded from {model_path} with window dimension {window_dim}")
 for i in range(3):
-    rho,_, window_dim, dx = load_training_data([names[i]],window_L=4.0,sim_L=15)
+    rho,orig_c1, window_dim, dx = load_training_data([names[i]],window_L=4.0,sim_L=15)
     rho = rho[0]  # Get the  profile
+    orig_c1 = orig_c1[0]
     shape = rho.shape[0]
     # rho=rho.unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions
     # rho = torch.nn.functional.avg_pool2d(rho, kernel_size=2, stride=2)  # [1, 1, H', W']
     # rho= rho.squeeze(0).squeeze(0)  # Remove batch and channel dimensions
     rho = rho[:600,:600]  # Take only the first half of the profile
+    orig_c1 = orig_c1[:600,:600]  # Take only the first half of the profile
     c1 =  neural_c1(model, rho, num_slices,15,50)
-    fig, ax = plt.subplots(1,2, figsize=(18, 9))
-    a = ax[0].imshow(rho)
+    cut = shape - c1.shape[0]
+    fig, ax = plt.subplots(1,3, figsize=(18, 6))
+    a = ax[0].imshow(rho[cut//2:shape-cut//2,cut//2:shape-cut//2])
     fig.colorbar(a, ax=ax[0])
     b = ax[1].imshow(c1)
     ax[1].set_title("Network c1")
     fig.colorbar(b, ax=ax[1])
-    save_path = os.path.join(output_dir,names[i]+".png")
+    c = ax[2].imshow(orig_c1[cut//2:shape-cut//2,cut//2:shape-cut//2])
+    fig.colorbar(c, ax=ax[2])
+    save_path = os.path.join(output_dir,os.path.basename(names[i])+".png")
 
     plt.savefig(save_path)
+    print(f"Figure saved to {save_path}")
     plt.close()
 

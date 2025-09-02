@@ -47,8 +47,11 @@ model = net.conv_neural_func9(3)
 
 rho = torch.randn(10,10)  # Example input tensor
 c2 =  neural_c2(model, rho, num_slices,1,10,True)
+c2 = c2.numpy()
 inv_rho = 1/rho
-fourier_c2 = torch.fft.rfftn(c2)
+c2_of_q = np.fft.rfft(c2,axis=2)
+
+
 v_mu_nu = torch.fft.rfft2(inv_rho)
 print(v_mu_nu.shape)
 print("fourier_c2 shape", fourier_c2.shape)

@@ -12,12 +12,34 @@ def neural_c1(model, rho,num_slices,sim_L, dx):
     ## rho matrix is either list of single matrix (as torch tensor) or a list of matrices
     _,_,window_dims,_ =next(model.children()).weight.shape
     slice_length= int(rho.shape[0] / num_slices)
+    result_length= slice_length - window_dims + 1
     #N = rho_matrix.shape[0]
     #output_dim = N - window_dims + 1
     # output=torch.empty((output_dim, output_dim),device="cpu")
     # rho_matrix=rho_matrix.to("cuda")
     outputs=[]
     model.eval()
+    
+    if num_slices == 1:
+            slice_output=[]
+            rho = rho.cuda(non_blocking=True)
+            windows,num_windows = _extract_windows_inference(1, window_dims, rho)
+            print("predict")
+            print(f"Number of windows: {num_windows}")
+            for k in range(num_windows):
+                # print("window shape", windows[k,:,:,:].shape)
+                inputs = windows[k,:,:,:]
+                output = model(inputs).view(-1).cpu()
+                slice_output.append(output)
+            slice_output = torch.cat(slice_output, dim=0).reshape(result_length, result_length)
+            # rho_slice = rho_slice.cpu()
+            # diff=(slice_output-rho_slice)
+            # assert torch.sum(diff) == 0, f"Output does not match input slice at position ({i},{j}). Difference: {torch.sum(diff)}"
+            del windows
+            torch.cuda.empty_cache()
+            gc.collect()
+            return slice_output.detach().numpy()
+
 
     for i in range(num_slices):
         for j in range(num_slices):
@@ -148,3 +170,40 @@ def neural_c2(model, rho,num_slices,sim_L, dx,y_norm=False):
 def static_structure_factor(c2):
     ## use y symmetry of c2 to reduce dimensions
     red_y =  c2[:,]
+
+
+def lattice_fourier_transform(c2,period_length, dx,num_modes):
+    """
+    Compute the lattice Fourier transform of the c2 tensor.
+    """
+    a = period_length
+    # Assuming c2 is a 3D tensor with shape (x,x',|z'|)
+    ## first do regular fft for z dimension (direction without potential)
+    fourier_c2 = np.fft.rfft(c2, axis=2)
+    c2_mu_nu = np.zeros((num_modes, num_modes, fourier_c2.shape[2]))
+    ### then do lattice Fourier transform for x and x' dimensions
+    for mu in range(num_modes):
+        Q_mu = 2* np.pi * mu / a
+        for nu in range(num_modes):
+            Q_nu = 2* np.pi * nu / a
+        
+def picard_minimization(L,mu,T,dx,model,nperiod,Amp,alpha=0.3,max_iter=3000):
+    x = np.linspace(0,L,int(L/dx))
+    y = np.linspace(0,L,int(L/dx))
+    xg, yg = np.meshgrid(x, y)
+    rho = np.zeros((len(x), len(y)))
+    rhobuffer = rho.copy()
+    rho = rho + 0.01
+    delta = 1
+    i = 0
+    while delta > 0.1:
+        rhobuffer =np.exp(-potential(xg,nperiod,L,Amp)/T+mu/T)+np.array(neural_c1(model,rho)) 
+        rho = (1-alpha)*rho + alpha*rhobuffer
+        delta = np.max(np.abs(rho - rhobuffer))
+        i += 1
+        print("Iteration: ", i)
+        print("Delta: ", delta)
+        if i > max_iter:
+            print("Max iterations reached")
+            return 
+    return rho,xg,yg

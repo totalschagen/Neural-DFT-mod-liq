@@ -107,7 +107,7 @@ names= helper.get_names(density_profiles_dir,tag,ending=".dat")
 # RAbatfile2 = os.path.join(output_dir, "RAM_usage.txt")
 old_sub_output_dir = None
 for cpu in [False,True]:
-    for s in [3,2]:
+    for s in [6,4]:
         for c_s in chunk_size:
             sub_output_dir = os.path.join(output_dir,f"stride_{s}_catCPU_{cpu}_chunk_{c_s}")
             os.makedirs(sub_output_dir, exist_ok=True)

@@ -43,7 +43,7 @@ kmax = int(sys.argv[10]) if len(sys.argv) > 10 else 12
 
 data_dir, density_profiles_dir, neural_func_dir = set_paths()
 
-model_tag = "20250725_005640chunk_training"
+model_tag = "low_res_prov_1"
 
 
 print(f"Starting training with {num_epochs} epochs, {num_workers} workers, {cache_size} cache size, pre_train={pre_train}, batch_size={batch_size}, learning_rate={learning_rate}, model_ind={model_ind}, kmax={kmax}")
@@ -146,6 +146,9 @@ for epoch in range(num_epochs):
     running_loss /= len(val_loader)
     validation_loss.append(running_loss)
     print(f"Validation Loss: {running_loss:.4f}")
+    # if running_loss < 1.53:
+    #     torch.save(model.state_dict(),output_dir+"/best_model.pth")
+    #     print(f"Best model saved to {output_dir}/best_model.pth at epoch {epoch+1} with validation loss {running_loss:.4f}")
     
         
 try:
