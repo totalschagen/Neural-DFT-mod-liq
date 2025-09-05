@@ -11,50 +11,42 @@ import utils.neural_helper as helper
 from utils.set_paths import set_paths
 from data_pipeline.create_training_data_func import load_training_data
 from data_pipeline.data_loader_class import prepared_windows_dataset,prepared_windows_shuffler
-from inference.inference_func import neural_c1,neural_c2
+from inference.inference_func import picard_minimization
 
-class debug_net(torch.nn.Module):
-    def __init__(self, input_dim, output_dim):
-        super(debug_net, self).__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-
-    def forward(self, x):
-        # get center of the input tensor
-        center_x = self.input_dim[0] // 2
-        center_y = self.input_dim[1] // 2
-        x_center = x[ center_x, center_y]  # Assuming x is of shape (batch_size, height, width)
-        tens = torch.zeros(self.output_dim, device=x.device)  # Create a tensor of zeros with the specified output dimensions
-        tens[0] = x_center  # Set the first element to the center value
-        return tens
 
 data_dir, density_profiles_dir, neural_func_dir = set_paths()
 
+model_tag = str(sys.argv[1]) if len(sys.argv) > 1 else "20250730_033617chunk_training"
+model_dim = int(sys.argv[2]) if len(sys.argv) > 2 else 401
 
-data_tag = "parallel2025-06-20_00-01-10"
-model_tag="20250724_020756chunk_training"
 
-num_slices=2
-output_dir = os.path.join(data_dir,"neural_func/inference","debug")
+timestamp =datetime.now().strftime("%Y%m%d_%H%M%S")
+output_dir = os.path.join(data_dir,"neural_func/picard",timestamp)
 os.makedirs(output_dir, exist_ok=True)
-
-names= helper.get_names(density_profiles_dir,data_tag,ending=".dat")
 model_path = os.path.join(neural_func_dir,  model_tag , "model.pth")
 
-# model = debug_net(input_dim=(21,21), output_dim=(1,))
-model = net.conv_neural_func9(3)
+model = net.conv_neural_func9(model_dim)
+model.load_state_dict(torch.load(model_path, map_location='cpu'))
+device= torch.device("cuda")
+model = model.to(device) 
+_,_, window_dim,_ = next(model.children()).weight.shape
+print(f"Model loaded from {model_path} with window dimension {window_dim}")
+L = 10
+T = 1
+nperiod=[2,5,10,15,20,30,40]
+mu=[-2,-1.5,-1.0,0.0,0.5,1.0,1.5,2.0,3,4]
+amp = [0.05,0.1,0.15,0.2]
+for n in nperiod:
+    for m in mu:
+        for a in amp:
+            print(f"Calculating for nperiod={n}, mu={m}, amp={a}")
+            rho = picard_minimization(L=L,mu=m,T=T,model=model,nperiod=n,Amp=a)
+            fig, ax = plt.subplots(1,1, figsize=(18, 6))
+            a = ax.imshow(rho)
+            fig.colorbar(a, ax=ax)
+            save_path = os.path.join(output_dir,f"rho_n{n}_mu{m}_amp{a}.png")
+            plt.savefig(save_path)
+            print(f"Figure saved to {save_path}")
+            plt.close()
 
-
-rho = torch.randn(10,10)  # Example input tensor
-c2 =  neural_c2(model, rho, num_slices,1,10,True)
-fig, ax = plt.subplots(1,2, figsize=(18, 9))
-a = ax[0].imshow(rho)
-fig.colorbar(a, ax=ax[0])
-b = ax[1].imshow(c1)
-ax[1].set_title("Network c1")
-fig.colorbar(b, ax=ax[1])
-save_path = os.path.join(output_dir,"test.png")
-
-plt.savefig(save_path)
-plt.close()
 

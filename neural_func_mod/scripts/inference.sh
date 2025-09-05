@@ -1,2 +1,2 @@
 #!/bin/bash
-PYTHONPATH=src python3 src/inference/inference_model_test.py  low_res_prov_1 251
+PYTHONPATH=src python3 src/inference/inference_model_debug.py  20250824_211928chunk_training 251

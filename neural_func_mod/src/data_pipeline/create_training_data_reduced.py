@@ -93,7 +93,7 @@ def gen_data(sim_L,window_L,names, chunk_size,CPU_cat,stride,output_dir,num_slic
 
 sim_L = 15
 cpu_cat = [True]
-chunk_size=range(2,13)
+chunk_size=[6]
 # chunk_size=[11,12]
 
 data_dir, density_profiles_dir, neural_func_dir = set_paths()

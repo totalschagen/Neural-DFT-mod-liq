@@ -106,8 +106,8 @@ train_dataset = prepared_windows_dataset(train_data,len_dic,cache_size=cache_siz
 val_dataset = prepared_windows_dataset(val_data,len_dic,cache_size=cache_size)
 sampler = prepared_windows_shuffler(train_dataset)
 print("Initializing DataLoader...")
-train_loader = DataLoader(train_dataset, batch_size=1024, sampler=sampler, num_workers=num_workers, pin_memory=True,prefetch_factor=4)
-val_loader = DataLoader(val_dataset, batch_size=1024,  num_workers=num_workers, pin_memory=True,prefetch_factor=4)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=sampler, num_workers=num_workers, pin_memory=True)
+val_loader = DataLoader(val_dataset, batch_size=batch_size,  num_workers=num_workers, pin_memory=True)
 print("Commencing training...")
 for epoch in range(num_epochs):
 
@@ -146,9 +146,9 @@ for epoch in range(num_epochs):
     running_loss /= len(val_loader)
     validation_loss.append(running_loss)
     print(f"Validation Loss: {running_loss:.4f}")
-    # if running_loss < 1.53:
-    #     torch.save(model.state_dict(),output_dir+"/best_model.pth")
-    #     print(f"Best model saved to {output_dir}/best_model.pth at epoch {epoch+1} with validation loss {running_loss:.4f}")
+    if running_loss < 0.01 and epoch > 30:
+         torch.save(model.state_dict(),output_dir+"/best_model.pth")
+         print(f"Best model saved to {output_dir}/best_model.pth at epoch {epoch+1} with validation loss {running_loss:.4f}")
     
         
 try:

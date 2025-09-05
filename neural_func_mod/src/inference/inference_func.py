@@ -187,17 +187,28 @@ def lattice_fourier_transform(c2,period_length, dx,num_modes):
         for nu in range(num_modes):
             Q_nu = 2* np.pi * nu / a
         
-def picard_minimization(L,mu,T,dx,model,nperiod,Amp,alpha=0.3,max_iter=3000):
-    x = np.linspace(0,L,int(L/dx))
-    y = np.linspace(0,L,int(L/dx))
+def picard_minimization(L,mu,T,model,nperiod,Amp,alpha=0.3,max_iter=3000):
+    _,_,window_dims,_ =next(model.children()).weight.shape
+
+    # x = np.linspace(0,L,int(L/dx))
+    # y = np.linspace(0,L,)
+    # xg, yg = np.meshgrid(x, y)
+    resolution = 50
+    x = np.linspace(0,10,resolution*L)
+    y = np.linspace(0,5,window_dims)
     xg, yg = np.meshgrid(x, y)
-    rho = np.zeros((len(x), len(y)))
+    assert xg.shape[1] == resolution*L, "xg shape mismatch"
+    assert xg.shape[0] == window_dims, "yg shape mismatch"
+    rho = np.zeros((window_dims, resolution*L))
     rhobuffer = rho.copy()
     rho = rho + 0.01
     delta = 1
     i = 0
+    Lperiod = L/nperiod
+    V = Amp*np.cos(2*np.pi*xg/Lperiod)
+    muloc=(V-mu)/T
     while delta > 0.1:
-        rhobuffer =np.exp(-potential(xg,nperiod,L,Amp)/T+mu/T)+np.array(neural_c1(model,rho)) 
+        rhobuffer =np.exp(symmetry_neural_c1(model,rho)-muloc) 
         rho = (1-alpha)*rho + alpha*rhobuffer
         delta = np.max(np.abs(rho - rhobuffer))
         i += 1
@@ -206,4 +217,45 @@ def picard_minimization(L,mu,T,dx,model,nperiod,Amp,alpha=0.3,max_iter=3000):
         if i > max_iter:
             print("Max iterations reached")
             return 
-    return rho,xg,yg
+    return rho
+
+def symmetry_neural_c1(model, rho):
+    ## rho matrix is numpy array
+    rho = torch.tensor(rho, dtype=torch.float32)    
+    _,_,window_dims,_ =next(model.children()).weight.shape
+    rho_x = rho.shape[1]
+    rho_y = rho.shape[0]
+    assert window_dims == rho_y, "rho must be linear with window dimensions"
+    result_length= rho_x - window_dims + 1
+    #N = rho_matrix.shape[0]
+    #output_dim = N - window_dims + 1
+    # output=torch.empty((output_dim, output_dim),device="cpu")
+    # rho_matrix=rho_matrix.to("cuda")
+    outputs=[]
+    model.eval()
+    
+    slice_output=[]
+    rho = rho.cuda(non_blocking=True)
+    # print(rho.shape)
+    # rho = rho.unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions
+    # rho = torch.nn.functional.pad(rho, (window_dims//2,window_dims//2,window_dims//2,window_dims//2), mode='circular')
+    # rho = rho.squeeze(0).squeeze(0)  # Remove batch and channel dimensions
+    windows,num_windows = _extract_windows_inference(1, window_dims, rho,padding=True)
+    print("predict")
+    print(f"Number of windows: {num_windows}")
+    for k in range(num_windows):
+        # print("window shape", windows[k,:,:,:].shape)
+        inputs = windows[k,:,:,:]
+        output = model(inputs).view(-1).cpu()
+        slice_output.append(output)
+    slice_output = torch.cat(slice_output, dim=0).reshape(rho_y, rho_x)
+    # rho_slice = rho_slice.cpu()
+    # diff=(slice_output-rho_slice)
+    # assert torch.sum(diff) == 0, f"Output does not match input slice at position ({i},{j}). Difference: {torch.sum(diff)}"
+    del windows
+    torch.cuda.empty_cache()
+    gc.collect()
+    return slice_output.detach().numpy()
+
+
+    

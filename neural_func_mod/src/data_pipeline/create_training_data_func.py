@@ -130,7 +130,7 @@ def torch_load(path):
     print(data['windows'].shape, data['labels'].shape)
     return data
 
-def _extract_windows_inference(stride,window_size, x,c2=False):
+def _extract_windows_inference(stride,window_size, x,padding=False,c2=False):
     """
     x, y: single matrix pair on GPU, shape (H, W)
     Returns:
@@ -146,6 +146,8 @@ def _extract_windows_inference(stride,window_size, x,c2=False):
     # Unfold to get all windows as columns
     pad_size = win //2
     # Apply padding to ensure windows can be extracted correctly
+    if padding:
+        x = F.pad(x, (pad_size,pad_size,pad_size,pad_size,), mode='circular')
     if c2:
         x = F.pad(x, (pad_size,pad_size,0,0), mode='circular') # Reflect padding
     #else:
