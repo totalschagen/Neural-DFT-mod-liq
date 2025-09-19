@@ -11,7 +11,7 @@ class conv_neural_func3(nn.Module):
     def forward(self,x):
         x = self.conv1(x)
         x = F.softplus(self.conv2(x))
-        x = self.conv2(x)
+        x = self.conv3(x)
         return x
 
 

@@ -187,7 +187,7 @@ def lattice_fourier_transform(c2,period_length, dx,num_modes):
         for nu in range(num_modes):
             Q_nu = 2* np.pi * nu / a
         
-def picard_minimization(L,mu,T,model,nperiod,Amp,alpha=0.3,max_iter=3000):
+def picard_minimization(L,mu,T,model,nperiod,Amp,alpha=0.3,max_iter=1000):
     _,_,window_dims,_ =next(model.children()).weight.shape
 
     # x = np.linspace(0,L,int(L/dx))
@@ -217,7 +217,8 @@ def picard_minimization(L,mu,T,model,nperiod,Amp,alpha=0.3,max_iter=3000):
         if i > max_iter:
             print("Max iterations reached")
             return 
-    return rho
+    c1 = symmetry_neural_c1(model,rho)
+    return rho, c1
 
 def symmetry_neural_c1(model, rho):
     ## rho matrix is numpy array

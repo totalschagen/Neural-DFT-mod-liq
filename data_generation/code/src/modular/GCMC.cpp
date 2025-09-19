@@ -249,9 +249,12 @@ void run_simulation(SimulationState* state,std::ofstream& Nout,std::ofstream& Et
   printf("Packing fraction = %f \n", state->packing_fraction);
   printf("Period = %f \n", state->Lperiod);
   printf("Amplitude = %f \n", state->Amp);
+  printf("Perturbation-Amplitude = %f \n", state->Amp_perturb);
   printf("Number of particles = %d \n", state->N);
   printf("Simulation Box = %f %f \n", state->Lx, state->Ly);
   printf("Number of periods = %d \n", state->nperiods);
+
+  printf("Number of periods of perturbation_pot = %d \n", state->nperiods_perturb);
   //printf("Wavenumber grid size = %d x %d \n", Mq, Mq);
   //printf("Wavenumber Delta = %f \n", Deltaq);
   printf("Check! Effective number density %f \n", state->N / state->Lx / state->Ly);
@@ -535,10 +538,10 @@ void mc_particle_move(SimulationState* state, std::mt19937& rng) {
   // if no overlap: move particle and update cell list
   if (overlap == 0) {
     // check potential in x direction
-    double Vold = state->Amp * cos(2 * PI * state->x[state->N] / state->Lperiod);
-    Vold = tilted_potential(state,state->x[i], state->y[i]);
-    double Vnew = state->Amp * cos(2 * PI * xnew / state->Lperiod);
-    Vnew = tilted_potential(state,xnew, ynew);
+    // double Vold = state->Amp * cos(2 * PI * state->x[state->N] / state->Lperiod);
+    double Vold = tilted_potential(state,state->x[i], state->y[i]);
+    // double Vnew = state->Amp * cos(2 * PI * xnew / state->Lperiod);
+    double Vnew = tilted_potential(state,xnew, ynew);
     double arg = -(Vnew - Vold) / state->T;
     double rr2 = float_dist(rng);
     if (exp(arg) > rr2) {

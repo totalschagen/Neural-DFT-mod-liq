@@ -45,15 +45,19 @@ int main() {
   ////////////////////////////////////////////////////////////////////
   // tunable parameters
 
-  //int nperiodsarray[]={2,5,10,15,20,30,40};
-  //double muarray[]={-2,-1.5,-1.0,0.0,0.5,1.0,1.5,2.0,3,4};
+  int nperiodsarray[]={10,20};
+  double muarray[]={0.5,4.0,8.0};
+  double amp_array[]={0.1,0.5};
+  int total = 9;
   #ifndef BULK
   #pragma omp parallel for
-  for(int m=1;m<150;m++){
+  for(int m=0;m<12;m++){
     SimulationState* state = new SimulationState();
 
     state->Neq = 100000000;
     state->Nsim = 500000001;
+    // state->Neq = 1000;
+    // state->Nsim = 5001;
 
     // create thread local random number generator
     //std::random_device rd;
@@ -71,7 +75,7 @@ int main() {
 
     std::uniform_int_distribution<int> Ldist(L_min,L_max);
     // state->Lx = double (Ldist(rng)); 
-    state->Lx=15.0; // fixed system size
+    state->Lx=10.0; // fixed system size
     state->Ly = state->Lx;
 
     // fix bounds for random parameters
@@ -84,23 +88,27 @@ int main() {
     // state->Nbins = LLL_max*20; // bins for 1 period
     state->Nbins = state->Lx * res; // bins with fixed resolution
     // initialize random distributions for potential variations
-    std::uniform_real_distribution<double> mudist(mu_min, mu_max);
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-    std::uniform_int_distribution<int> rand(LLL_min,LLL_max);
-    state->mu = mudist(rng);
+    // std::uniform_real_distribution<double> mudist(mu_min, mu_max);
+    // std::uniform_real_distribution<double> dist(0.0, 1.0);
+    // std::uniform_int_distribution<int> rand(LLL_min,LLL_max);
+    
+    state->mu = muarray[m%3];
+    state->Amp_in = amp_array[(m/3)%2];
+    state->Amp_perturb = 0.0;
+    state->nperiods = nperiodsarray[(m/3)/2]; 
+    state->nperiods_perturb = 0.0;
     //state->mu = 7.9;
     state->density = 3*0.1;
-    state->Amp_in = dist(rng);
-    state->Amp_perturb = dist(rng)*0.01;
-    
-    state->nperiods = rand(rng); 
-    state->nperiods_perturb = rand(rng); 
+    printf("Amplitude = %f \n", state->Amp_in);
+    printf("Perturbation-Amplitude = %f \n", state->Amp_perturb);
+    printf("Number of periods = %d \n", state->nperiods);
+    printf("Number of periods of perturbation_pot = %d \n", state->nperiods_perturb);
 
     state-> Lperiod = double(state->Lx*1.0) / double(state->nperiods*1.0);
-    state-> Lperiod_perturb = double(state->Lx*1.0) / double(state->nperiods_perturb*1.0);
+    state-> Lperiod_perturb = 1;
 
     state->nperiods = int((state->Lx + 0.000000001) / state->Lperiod);
-    state->nperiods_perturb = int((state->Lx + 0.000000001) / state->Lperiod_perturb);
+    state->nperiods_perturb = 0;
 
     run_simulation(state,fout2,fout1,density_profiles_dir,m,rng, positions_dir,output_dir); 
 

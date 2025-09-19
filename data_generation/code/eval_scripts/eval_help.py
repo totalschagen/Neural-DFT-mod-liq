@@ -55,9 +55,9 @@ def plot_density_profiles_2d_3d(tag,num=-1,start=0):
     names= [f for f in os.listdir(density_profiles_dir) if os.path.isfile(os.path.join(density_profiles_dir, f))]
     slice = names[start:num]
     rows =len(slice)
-    cols = 2
+    cols = 1
     ## create subplots
-    fig, axs = plt.subplots(rows, cols, figsize=(11,10*rows/2))
+    fig, axs = plt.subplots(rows, cols, figsize=(9,9*rows))
     fig.suptitle("2D Density profile")
     
     for i, name in enumerate(slice):
@@ -69,23 +69,23 @@ def plot_density_profiles_2d_3d(tag,num=-1,start=0):
         xi = df["x"].values.reshape(shape, shape)
         yi = df["y"].values.reshape(shape,shape)
         rho = df["rho"].values.reshape(shape,shape)
-        pcm = axs[i,0].pcolormesh(xi, yi, rho/2, shading='auto', cmap='viridis',label=label)
-        axs[i,0].set_xlabel(r"$x/\sigma$")
-        axs[i,0].set_ylabel(r"$y/\sigma$")
+        pcm = axs[i].pcolormesh(xi, yi, rho/2, shading='auto', cmap='viridis',label=label)
+        axs[i].set_xlabel(r"$x/\sigma$")
+        axs[i].set_ylabel(r"$y/\sigma$")
         patch = mpatches.Patch(color=pcm.cmap(0.5), label=label)
-        axs[i,0].legend(handles=[patch])
+        axs[i].legend(handles=[patch])
 
-        x_values = df.groupby("x").mean().reset_index()["x"]
-        rho_values = df.groupby("x").mean().reset_index()["rho"]
+        # x_values = df.groupby("x").mean().reset_index()["x"]
+        # rho_values = df.groupby("x").mean().reset_index()["rho"]
 
-        axs[i,1].plot(x_values, rho_values, label="rho")
-        axs[i,1].set_title(slice[i])
-        axs[i,1].set_xlabel(r"$x/\sigma$")
-        axs[i,1].set_ylabel(r"$\rho$")
+        # axs[i,1].plot(x_values, rho_values, label="rho")
+        # axs[i,1].set_title(slice[i])
+        # axs[i,1].set_xlabel(r"$x/\sigma$")
+        # axs[i,1].set_ylabel(r"$\rho$")
 
 
 
-        fig.colorbar(pcm, ax=axs[i,0], label=r"$\rho^{(1)}(\mathbf{x})$") 
+        fig.colorbar(pcm, ax=axs[i], label=r"$\rho^{(1)}(\mathbf{x})$") 
     plt.tight_layout()
     plt.savefig(savename, dpi=300)
 

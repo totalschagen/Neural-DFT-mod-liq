@@ -5,6 +5,7 @@ import os
 import torch
 import psutil
 from torch.func import vmap,jacrev
+from utils.set_paths import set_paths
 
 def load_df_old(name,tag):
     parent_dir = os.path.dirname(os.getcwd())
@@ -49,7 +50,8 @@ def load_df(name):
     df = pd.read_csv(name,delimiter = " ")
 
     extra=[]
-    extra_labels = ["nperiod","mu","packing","amp","period_perturb","amp_perturb"]
+    extra_labels = ["nperiod","mu","packing","amp","period_perturb","amp_perturb","Lx"]
+    print("Columns:",list(df.columns))
     try:
         nperiod = (list(df.columns)[4])
         df.drop(columns=[nperiod],inplace=True)
@@ -59,7 +61,6 @@ def load_df(name):
         print("No nperiod")
     try:
         mu = (list(df.columns)[4])
-
         df.drop(columns=[mu],inplace=True)
         mu = float(mu)
         extra.append(mu)
@@ -73,10 +74,10 @@ def load_df(name):
     except:
         print("No packing")
     try:
-        packing = (list(df.columns)[4])
-        df.drop(columns=[packing],inplace=True)
-        packing = float(packing)
-        extra.append(packing)
+        amp = (list(df.columns)[4])
+        df.drop(columns=[amp],inplace=True)
+        amp = float(amp)
+        extra.append(amp)
     except:
         print("No amp")
     try:
@@ -84,15 +85,24 @@ def load_df(name):
         df.drop(columns=[period_perturb],inplace=True)
         period_perturb = float(period_perturb)
         extra.append(period_perturb)
+        print("period_perturb",period_perturb)
     except:
-        print("No peturbation period")
+        print("No perturbation period")
     try:
         amp_perturb = (list(df.columns)[4])
         df.drop(columns=[amp_perturb],inplace=True)
         amp_perturb = float(amp_perturb)
         extra.append(amp_perturb)
+
     except:
-        print("No peturbation amp")
+        print("No perturbation amp")
+    try:
+        Lx = (list(df.columns)[4])
+        df.drop(columns=[Lx],inplace=True)
+        Lx = float(Lx)
+        extra.append(Lx)
+    except:
+        print("No system size")
     extra = dict(zip(extra_labels, extra))
     return df, extra
 
@@ -365,6 +375,7 @@ def plot_density_profiles_2d_3d_debug(tag,num=-1,start=0):
 
 
         fig.colorbar(pcm, ax=axs[i,0], label=r"$\rho^{(1)}(\mathbf{x})$") 
+
     plt.tight_layout()
     plt.savefig(savename, dpi=300)
 
@@ -381,3 +392,20 @@ def parse_len_file_to_dict(file_path):
                 key, value = line.strip().split(';')
                 result[key.strip()] = int(value.strip())
     return result
+
+def data_profile_overview(tag):
+    data_dir, density_profiles_dir, neural_func_dir = set_paths()
+    density_profiles_dir = os.path.join(density_profiles_dir,tag)
+    overview_file = os.path.join(density_profiles_dir,"overview.txt")
+    names= [f for f in os.listdir(density_profiles_dir) if os.path.isfile(os.path.join(density_profiles_dir, f)) and f.endswith(".dat")]
+    if os.path.exists(overview_file):
+        os.remove(overview_file)
+    with open(overview_file, 'a') as f:
+        f.write(f"Filename;Length;nperiod;mu;packing;amp;period_perturb;amp_perturb;Lx\n")
+    
+    for name in names:
+        df, extra = load_df(os.path.join(density_profiles_dir,name))
+        len_data = len(df)
+        print(f"File: {name}, Length: {len_data}, Extra: {extra}")
+        with open(overview_file, 'a') as f:
+            f.write(f"{name};{len_data};{extra["nperiod"]};{extra["mu"]};{extra["packing"]};{extra["amp"]};{extra["period_perturb"]};{extra["amp_perturb"]},{extra["Lx"]}\n")
